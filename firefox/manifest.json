@@ -34,7 +34,7 @@
     "default_title": "Repo Launcher",
     "default_popup": "popup.html"
   },
-  "version": "1.8.18",
+  "version": "1.8.19",
   "browser_specific_settings": {
     "gecko": {
       "id": "repo-launcher@extensions.local",

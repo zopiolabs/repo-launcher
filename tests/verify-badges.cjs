@@ -127,6 +127,11 @@ async function setup({initial = {}, signedIn = true, fail = false, readerPolicy 
   assert.match(diagnosedLinks[0].title, /counter could not be identified/);
   assert.match(diagnosedLinks[1].title, /404/);
   assert.match(diagnosedLinks[2].title, /403/);
+  const disabledSecurity = await setup({result: {pulls: 0, issues: 0, dependabot: null, diagnostics: {dependabot: "dependabot-disabled"}}});
+  const disabledLinks = disabledSecurity.bind();
+  await disabledSecurity.refresh.listeners.click();
+  assert.equal(disabledLinks[2].children[0].textContent, "—");
+  assert.match(disabledLinks[2].title, /Dependabot alerts are disabled/);
   // An old page reader cannot supply counts under the new criteria.
   const oldReader = await setup({readerPolicy: 'old-policy'});
   const oldReaderLinks = oldReader.bind();

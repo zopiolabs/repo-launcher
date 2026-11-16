@@ -63,13 +63,12 @@ globalThis.GitHubCounts = (() => {
     if (!signedIn(doc)) return null;
     const suffix = { pulls: "pulls", issues: "issues", dependabot: "security/dependabot" }[kind];
     if (!suffix) return null;
-    if (query) {
-      const filter = doc.querySelector(kind === "pulls"
-        ? "#repo-pulls-dashboard-filter-input, #js-issues-search"
+    const filter = doc.querySelector(kind === "pulls"
+      ? "#repo-pulls-dashboard-filter-input, #js-issues-search"
+      : kind === "issues" ? "#issues-index-filter-input, #js-issues-search"
         : "#dependabot-alert-list-filterbar-input");
-      const activeQuery = filter?.value || filter?.getAttribute("value") || "";
-      if (normalizedQuery(activeQuery) !== normalizedQuery(query)) return null;
-    }
+    const activeQuery = filter?.value || filter?.getAttribute("value") || "";
+    if (query && normalizedQuery(activeQuery) !== normalizedQuery(query)) return null;
 
     // Repository navigation counters represent open PRs and open issues.
     // Never use the Security tab's total: it includes other alert types.
@@ -89,8 +88,13 @@ globalThis.GitHubCounts = (() => {
       if (element.hasAttribute("href")) {
         if (!matchesPath(element, root, suffix)) continue;
         const url = new URL(element.getAttribute("href"), `${root}/${suffix}`);
-        const query = url.searchParams.get("q") || "";
-        if (!/(?:^|\s)(?:is|state):open(?:\s|$)/i.test(query) && url.searchParams.get("state") !== "open") continue;
+        const linkQuery = url.searchParams.get("q") || "";
+        // The new Issues view uses href="#" for its selected state control.
+        // Trust it only when the search field confirms the full open-issues query.
+        const selectedOpenIssues = kind === "issues" && element.getAttribute("href") === "#"
+          && ["true", "page"].includes(element.getAttribute("aria-current"))
+          && normalizedQuery(activeQuery) === normalizedQuery(QUERIES.issues);
+        if (!selectedOpenIssues && !/(?:^|\s)(?:is|state):open(?:\s|$)/i.test(linkQuery) && url.searchParams.get("state") !== "open") continue;
       }
       const text = (element.textContent || "").replace(/\s+/g, " ").trim();
       const label = element.getAttribute("aria-label") || "";

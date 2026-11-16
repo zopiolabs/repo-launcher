@@ -14,6 +14,7 @@
   function unknown(reason) { return { pulls: null, issues: null, dependabot: null, updatedAt: Date.now(), reason }; }
   function failureMessage(entry, field) {
     const reason = entry?.diagnostics?.[field] || entry?.reason;
+    if (reason === "dependabot-disabled") return "Dependabot alerts are disabled for this repository. No count is available.";
     if (reason === "counter-not-found") return "GitHub page loaded, but the open counter could not be identified.";
     if (reason === "http-403") return "GitHub denied access to this page (403).";
     if (reason === "http-404") return "GitHub could not find this page, or this account cannot access it (404).";
@@ -92,7 +93,7 @@
           for (const field of Object.values(fields)) safe[field] = validCount(result?.[field]) ? result[field] : null;
           safe.diagnostics = Object.fromEntries(Object.values(fields).flatMap(field => {
             const detail = result?.diagnostics?.[field];
-            return typeof detail === "string" && /^(?:ok|counter-not-found|not-html|signed-out|redirected|timeout|request-failed|http-\d{3})$/.test(detail) ? [[field, detail]] : [];
+            return typeof detail === "string" && /^(?:ok|counter-not-found|dependabot-disabled|not-html|signed-out|redirected|timeout|request-failed|http-\d{3})$/.test(detail) ? [[field, detail]] : [];
           }));
           safe.reason = result?.reason === "signed-out" ? "signed-out" : Object.values(fields).every(field => safe[field] !== null) ? "ok" : "unreadable";
           await store(root, safe);

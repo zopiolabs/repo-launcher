@@ -19,6 +19,10 @@
       if (finalUrl.origin !== "https://github.com" || finalUrl.pathname.replace(/\/+$/, "").toLowerCase() !== expectedPath) return { count: null, reason: "redirected" };
       const doc = new DOMParser().parseFromString(await response.text(), "text/html");
       if (!GitHubCounts.signedIn(doc)) return { count: null, reason: "signed-out" };
+      if (kind === "dependabot" && Array.from(doc.querySelectorAll("main h2, main h3"))
+        .some(heading => heading.textContent.trim() === "Dependabot alerts are disabled.")) {
+        return { count: null, reason: "dependabot-disabled" };
+      }
       const count = GitHubCounts.readOpenCount(doc, root, kind, kind === "issues" ? null : query);
       return { count, reason: count === null ? "counter-not-found" : "ok" };
     } catch (error) { return { count: null, reason: error.name === "TimeoutError" ? "timeout" : "request-failed" }; }
