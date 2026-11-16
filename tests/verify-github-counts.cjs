@@ -22,9 +22,9 @@ function element(text, attributes = {}, counter = null) {
   };
 }
 
-function page({ signedIn = true, navKind, navCount, controls = [], modernNav = false, query = "", headings = [] } = {}) {
+function page({ signedIn = true, navKind, navCount, controls = [], modernNav = false, query = "", headings = [], results = [] } = {}) {
   const meta = element("", { content: signedIn ? "fixture-user" : "" });
-  const main = { querySelectorAll: () => controls };
+  const main = { querySelectorAll: selector => selector.includes('results-count') ? results : controls };
   const nav = navKind ? element("", { href: `/team/project/${navKind}` }, navCount) : null;
   return {
     body: { classList: { contains: () => false } },
@@ -61,6 +61,17 @@ for (const query of ["", "is:issue state:closed", "is:issue state:open assignee:
 }
 assert.equal(api.readOpenCount(page({controls: [currentIssueControl(0, {"aria-current": "false"})], query: "is:issue is:open"}), root, "issues"), null);
 assert.equal(api.readOpenCount(page({controls: [currentIssueControl(0, {href: "/other/project/issues#"})], query: "is:issue is:open"}), root, "issues"), null);
+// Observed advanced-search markup: <h2><span data-testid="results-count">0<!-- --> <!-- -->results</span></h2>.
+// There are no Open/Closed controls and zero has no repository navigation badge.
+for (const [text, expected] of [["0 results", 0], ["1 result", 1], ["1,234 results", 1234], ["1.2k results", null], ["99+ results", null]]) {
+  assert.equal(api.readOpenCount(page({query: "is:issue is:open", results: [element(text)]}), root, "issues"), expected);
+}
+for (const query of ["", "is:issue is:closed", "is:issue is:open assignee:@me"]) {
+  assert.equal(api.readOpenCount(page({query, results: [element("0 results")]}), root, "issues"), null);
+}
+assert.equal(api.readOpenCount(page({signedIn: false, query: "is:issue is:open", results: [element("0 results")]}), root, "issues"), null);
+assert.equal(api.readOpenCount(page({query: "is:issue is:open", results: [element("0 results", {"aria-busy": "true"})]}), root, "issues"), null);
+assert.equal(api.readOpenCount(page({query: securityQuery, results: [element("0 results")]}), root, "dependabot", securityQuery), null);
 const openControl = element("7 Open", {href: "/team/project/security/dependabot?q=is%3Aopen"});
 const closedControl = element("99 Closed", {href: "/team/project/security/dependabot?q=is%3Aclosed"});
 const otherRepository = element("82 Open", {href: "/other/project/security/dependabot?q=is%3Aopen"});
@@ -90,7 +101,7 @@ assert.equal(api.readOpenCount(page({controls: [modernOpen], query: "is:open sev
 assert.equal(api.readOpenCount(page({controls: [openControl], query: "is:open"}), root, "dependabot", securityQuery), null);
 assert.equal(api.readOpenCount(page({controls: [openControl], query: "is:open severity:critical,high,medium"}), root, "dependabot", securityQuery), null);
 
-async function reader({loggedIn = true, saved = [root], failKind = "", loginRedirect = false, modern = false, disabledSecurity = false, zeroIssues = false} = {}) {
+async function reader({loggedIn = true, saved = [root], failKind = "", loginRedirect = false, modern = false, disabledSecurity = false, zeroIssues = false, advancedIssues = false} = {}) {
   let listener;
   const requests = [];
   const pages = {
@@ -99,6 +110,7 @@ async function reader({loggedIn = true, saved = [root], failKind = "", loginRedi
     dependabot: page({controls: [modern ? modernOpen : openControl], query: securityQuery})
   };
   if (zeroIssues) pages.issues = page({navKind: "issues", modernNav: true, controls: [currentIssueControl(0)], query: "is:issue state:open"});
+  if (advancedIssues) pages.issues = page({navKind: "issues", modernNav: true, query: "is:issue is:open", results: [element("0 results")]});
   if (disabledSecurity) pages.dependabot = page({headings: [element("Dependabot alerts are disabled.")]});
   const ctx = vm.createContext({
     URL, Date, AbortSignal,
@@ -145,6 +157,10 @@ async function reader({loggedIn = true, saved = [root], failKind = "", loginRedi
   assert.deepEqual([disabledResult.pulls, disabledResult.issues, disabledResult.dependabot], [4, 0, null]);
   assert.equal(disabledResult.diagnostics.issues, "ok");
   assert.equal(disabledResult.diagnostics.dependabot, "dependabot-disabled");
+  const advanced = await reader({advancedIssues: true});
+  const advancedResult = await advanced.request({type: "read-github-counts", root});
+  assert.deepEqual([advancedResult.pulls, advancedResult.issues, advancedResult.dependabot], [4, 0, 7]);
+  assert.equal(advancedResult.diagnostics.issues, "ok");
   let originReply;
   live.listener({type: "github-session-status"}, {id: live.sender.id, origin: extensionOrigin}, value => {originReply = value;});
   assert.equal(originReply.signedIn, true);

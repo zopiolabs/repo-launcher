@@ -84,6 +84,16 @@ globalThis.GitHubCounts = (() => {
 
     const main = doc.querySelector("main");
     if (!main) return null;
+    // Advanced issue searches replace the Open/Closed controls with a result total.
+    // It is an open-issue count only when the active query matches exactly.
+    if (kind === "issues" && normalizedQuery(activeQuery) === normalizedQuery(QUERIES.issues)) {
+      for (const result of main.querySelectorAll('h2 [data-testid="results-count"], h3 [data-testid="results-count"]')) {
+        if (result.hidden || result.getAttribute("aria-busy") === "true") continue;
+        const match = result.textContent.match(/^\s*([\d,\s\u00a0\u202f]+)\s+results?\s*$/i);
+        const count = match ? exactNumber(match[1]) : null;
+        if (count !== null) return count;
+      }
+    }
     for (const element of main.querySelectorAll('a[href], button, [role="tab"]')) {
       if (element.hasAttribute("href")) {
         if (!matchesPath(element, root, suffix)) continue;

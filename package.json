@@ -1,6 +1,6 @@
 {
   "name": "repo-launcher",
-  "version": "1.8.19",
+  "version": "1.8.20",
   "private": true,
   "description": "Compact Chrome and Firefox repository launcher with GitHub session counts.",
   "repository": "https://github.com/zopiolabs/repo-launcher.git",
