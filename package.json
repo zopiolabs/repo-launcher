@@ -1,0 +1,13 @@
+{
+  "name": "repo-launcher",
+  "version": "1.8.18",
+  "private": true,
+  "description": "Compact Chrome and Firefox repository launcher with GitHub session counts.",
+  "repository": "https://github.com/zopiolabs/repo-launcher.git",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node scripts/test.cjs",
+    "package": "node scripts/package.cjs"
+  }
+}

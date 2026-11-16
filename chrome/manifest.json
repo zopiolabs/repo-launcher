@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Repo Launcher",
+  "minimum_chrome_version": "141",
+  "description": "Keep your favorite Git repositories one click away.",
+  "permissions": [
+    "storage",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://github.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": [
+        "github-counts.js",
+        "github-reader.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "popup.html?view=panel"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    },
+    "default_title": "Repo Launcher",
+    "default_popup": "popup.html"
+  },
+  "version": "1.8.18"
+}
