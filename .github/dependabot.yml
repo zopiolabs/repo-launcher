@@ -1,4 +1,5 @@
-# Keep routine updates grouped; review major upgrades separately.
+# Security fixes are automatic; routine minor/patch updates are weekly and grouped.
+# Major updates remain separate. All pull requests require manual merge and existing CI.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -23,3 +24,6 @@ updates:
         applies-to: "security-updates"
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
